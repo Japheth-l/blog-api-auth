@@ -5,6 +5,7 @@ const articleSchema = new mongoose.Schema({
     content: { type: String, required: true },
     author: {type: String, required: true },
     tags: { type: [String], default:[] },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 
 // Bonus: text index for search

@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Article = require('../models/article.models');
 const validate = require('../middleware/validate');
+const requireAuth = require('../middleware/requireAuth.js');
+
+// Protect All routes
+router.use(requireAuth);
 
 // 1. SEARCH route - SPECIFIC routes FIRST
 router.get('/search', async (req, res, next) => {
@@ -36,10 +40,13 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// 4. POST create article
+// 4. Update POST to save UserId from token 
 router.post('/', validate, async (req, res, next) => {
   try {
-    const article = await Article.create(req.body);
+    const article = await Article.create({
+      ...req.body,
+    userId: req.user.id, // from token
+    });
     res.status(201).json(article);
   } catch (err) {
     next(err);
@@ -49,10 +56,21 @@ router.post('/', validate, async (req, res, next) => {
 // 5. PUT update article
 router.put('/:id', validate, async (req, res, next) => {
   try {
-    const article = await Article.findByIdAndUpdate(
-      req.params.id, req.body, { new: true, runValidators: true }
-    );
+    let article = await Article.findById(req.params.id);
     if (!article) return res.status(404).json({ error: 'Article not found' });
+
+    // Check ownership before doing anything
+    if (article.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to modify this article' });
+    }
+
+    // Now it's safe to update
+    article = await Article.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true, runValidators: true }
+    );
+    
     res.json(article);
   } catch (err) {
     next(err);
@@ -62,8 +80,15 @@ router.put('/:id', validate, async (req, res, next) => {
 // 6. DELETE article
 router.delete('/:id', async (req, res, next) => {
   try {
-    const article = await Article.findByIdAndDelete(req.params.id);
+    const article = await Article.findById(req.params.id);
     if (!article) return res.status(404).json({ error: 'Article not found' });
+
+    // Check ownership
+    if (article.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to modify this article' });
+    }
+
+    await Article.findByIdAndDelete(req.params.id);
     res.json({ message: 'Article deleted' });
   } catch (err) {
     next(err);

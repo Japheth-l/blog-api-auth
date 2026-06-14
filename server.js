@@ -7,6 +7,8 @@ require('dotenv').config();  // Load .env variables before anything
 const express = require('express');
 const mongoose = require('mongoose');
 
+const authRoutes = require('./routes/auth.routes');
+
 const articleRoutes = require('./routes/articles.routes');
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
@@ -15,8 +17,10 @@ const app = express();
 
 app.use(express.json());
 app.use(logger);
+app.use('/auth', authRoutes);
 app.use('/articles', articleRoutes);
 app.use(errorHandler);
+
 
 // Check if MONGO_URI exists
 if (!process.env.MONGO_URI) {
