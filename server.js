@@ -1,45 +1,20 @@
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']); // Forces Node to use Google DNS
-
-require('dotenv').config();  // Load .env variables before anything 
-
-
-const express = require('express');
+require('dotenv').config();
 const mongoose = require('mongoose');
+const checkEnv = require('./src/config/checkEnv');
+const app = require('./src/app');
 
-const authRoutes = require('./routes/auth.routes');
+// Exit early if any required environment variable is missing
+checkEnv();
 
-const articleRoutes = require('./routes/articles.routes');
-const logger = require('./middleware/logger');
-const errorHandler = require('./middleware/errorHandler');
-
-const app = express();
-
-app.use(express.json());
-app.use(logger);
-app.use('/auth', authRoutes);
-app.use('/articles', articleRoutes);
-app.use(errorHandler);
-
-
-// Check if MONGO_URI exists
-if (!process.env.MONGO_URI) {
-    console.error('ERROR: MONGO_URI is not defined in .env file');
-    process.exit(1);
-}
-
-// After require('dotenv').config()
-console.log('PORT from env:', process.env.PORT);
-
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 10000, // wait 10s before timing out
+  socketTimeoutMS: 45000,
+  family: 4, // force IPv4 to avoid DNS resolution issues on restricted networks
+})
   .then(() => {
     console.log('MongoDB connected');
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () =>
-      console.log(`Server running on port ${PORT}`)
+    app.listen(process.env.PORT, () =>
+      console.log(`Server running on port ${process.env.PORT}`)
     );
   })
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
-  });
+  .catch(err => console.error(err));
