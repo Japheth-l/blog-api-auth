@@ -1,21 +1,17 @@
-const requiredEnvVars = [
-  'PORT',
-  'MONGO_URI',
-  'JWT_SECRET',
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
-];
+// Fails fast at startup instead of letting the app crash later, mid-request,
+// with a cryptic error (e.g. "uri must be a string, got undefined").
+const REQUIRED_ENV_VARS = ['PORT', 'MONGO_URI', 'JWT_SECRET'];
 
 const checkEnv = () => {
-  const missing = requiredEnvVars.filter(key => !process.env[key]);
+  const missing = REQUIRED_ENV_VARS.filter(
+    (key) => !process.env[key] || process.env[key].trim() === ''
+  );
 
   if (missing.length > 0) {
-    console.error(`[ERROR] Missing required environment variables: ${missing.join(', ')}`);
+    console.error('Missing required environment variable(s):', missing.join(', '));
+    console.error('Check your .env file against .env.example, then try again.');
     process.exit(1);
   }
-
-  console.log('All environment variables loaded successfully');
 };
 
 module.exports = checkEnv;

@@ -2,30 +2,27 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 
-// Tell Multer to stream files directly to Cloudinary instead of saving to disk
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'blog-api/posts',       // folder name in your Cloudinary account
+    folder: 'blog-api-covers',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
   },
 });
 
-// Only allow image MIME types through — reject everything else before upload
+// Reject anything that isn't an image before it ever reaches Cloudinary.
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);  // accept the file
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
   } else {
-    cb(new Error('Only JPEG, PNG, and WEBP images are allowed'), false); // reject
+    cb(new Error('Only image files are allowed'));
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
 module.exports = upload;

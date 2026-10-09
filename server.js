@@ -1,20 +1,18 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
+
 const checkEnv = require('./src/config/checkEnv');
+checkEnv(); // exits the process immediately if anything required is missing
+
+const connectDB = require('./src/config/db');
 const app = require('./src/app');
 
-// Exit early if any required environment variable is missing
-checkEnv();
+const PORT = process.env.PORT || 5003;
 
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 10000, // wait 10s before timing out
-  socketTimeoutMS: 45000,
-  family: 4, // force IPv4 to avoid DNS resolution issues on restricted networks
-})
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(process.env.PORT, () =>
-      console.log(`Server running on port ${process.env.PORT}`)
-    );
-  })
-  .catch(err => console.error(err));
+const start = async () => {
+  await connectDB(); // DB must be connected before we start accepting requests
+  app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+  });
+};
+
+start();
